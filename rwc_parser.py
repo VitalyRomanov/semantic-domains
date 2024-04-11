@@ -18,7 +18,7 @@ class RWCParser:
         self.cursor = 0
 
     def document_len(self):
-        return 100  # len(self.document.paragraphs)
+        return len(self.document.paragraphs)
     
     def get_current_line(self):
         if self.cursor < self.document_len():
