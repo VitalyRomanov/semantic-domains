@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "semantic-domains"
+authors = [{ name = "Vitaly R" }]
+description = "Library for importing data from Semantic Domains resource in a manchine readable format."
+readme = "README.md"
+requires-python = ">=3.7"
+license = {text = "MIT License"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dynamic = ["dependencies", "version"]
+
+[tool.setuptools]
+license-files = ["LICENSE"]
+
+[tool.setuptools.dynamic]
+version = {attr = "semantic-domains.__version__"}
+dependencies = {file = ["requirements.txt"]}
+readme = {file = ["README.md"]}
+
+
+[project.urls]
+"Homepage" = "https://github.com/VitalyRomanov/semantic-domains"
+"Bug Tracker" = "https://github.com/VitalyRomanov/semantic-domains/issues"
