@@ -4,7 +4,7 @@ from typing import Dict, List, Tuple, Union
 
 from docx import Document
 
-from definitions import Domain, Question
+from semantic_domains.definitions import Domain, Question
 
 
 def read_docx(path: Union[str, Path]):

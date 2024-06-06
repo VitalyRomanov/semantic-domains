@@ -1,6 +1,6 @@
 import argparse
 
-from rwc_parser import convert_rwc_domains_to_json
+from semantic_domains.rwc_parser import convert_rwc_domains_to_json
 
 
 def main(args):

@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Union
 
-from definitions import Domain, Question
+from semantic_domains.definitions import Domain, Question
 
 
 class DomainNode:
