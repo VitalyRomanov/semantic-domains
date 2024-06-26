@@ -1,7 +1,7 @@
 from copy import copy
 import json
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Union
+from typing import Dict, Iterable, List, Optional, Type, Union
 
 from semantic_domains.definitions import Domain, Question
 
@@ -9,9 +9,9 @@ from semantic_domains.definitions import Domain, Question
 class DomainNode:
     subdomains: Dict[int, 'DomainNode']
     content: Optional[Domain]
-    parent: "DomainNode"
+    parent: Optional["DomainNode"]
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: Optional["DomainNode"] = None):
         self.subdomains = {}
         self.content = None
         self.parent = parent
@@ -19,7 +19,7 @@ class DomainNode:
     def domain_code(self, code: str) -> List[int]:
         return [int(part) for part in code.split(".")]
 
-    def insert(self, domain: Domain, code_parts: List[int] = None) -> None:
+    def insert(self, domain: Domain, code_parts: Optional[List[int]] = None) -> None:
         if code_parts is None:
             code_parts = self.domain_code(domain.code)
         
@@ -42,18 +42,18 @@ class DomainNode:
         return f"{self.__class__.__name__}({path if self.content else None})"
     
     def __iter__(self) -> Iterable["DomainNode"]:
-        return self.traverse(return_domain=False)
+        return self.traverse(return_domain=False)  # type: ignore
     
     def iterate_domains(self) -> Iterable[Domain]:
-        return self.traverse(return_domain=True)
+        return self.traverse(return_domain=True)  # type: ignore
     
-    def traverse(self, max_depth: int = 5, return_domain: bool = False) -> Iterable["DomainNode"]:
+    def traverse(self, max_depth: int = 5, return_domain: bool = False):
         for node in self.subdomains.values(): 
             yield node.content if return_domain else node
             if max_depth > 0:
                 yield from node.traverse(max_depth=max_depth - 1)
 
-    def get_content_property(self, prop: str) -> Union[str, None]:
+    def get_content_property(self, prop: str) -> str:
         if self.content is not None:
             return getattr(self.content, prop)
         else:
@@ -88,7 +88,9 @@ class DomainNode:
             key = copy(key)
         
         if len(key) == 0:
-            return self.content
+            content = self.content
+            assert content is not None
+            return content
         else:
             descend = key.pop(0)
             return self.subdomains[descend][key]
@@ -103,10 +105,16 @@ def assemble_hierarchy(domains: List[Domain]) -> DomainNode:
     return root
 
 
-def read_domains_from_json(json_path: Union[str, Path], as_hierarchy: bool = False) -> Union[List[Domain], DomainNode]:
+def read_domains_from_json(json_path: Union[str, Path], as_hierarchy: bool = False, alternative_domain_class: Optional[Type[Domain]] = None) -> Union[List[Domain], DomainNode]:
     with open(json_path, "r") as f:
         data = json.load(f)
-    domains = [Domain.from_dict(domain) for domain in data["domains"]]
+
+    if alternative_domain_class is None:
+        domain_class = Domain
+    else:
+        domain_class = alternative_domain_class
+
+    domains = [domain_class.from_dict(domain) for domain in data["domains"]]
     if as_hierarchy:
         return assemble_hierarchy(domains)
     return domains

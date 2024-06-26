@@ -1,10 +1,17 @@
 from dataclasses import dataclass, asdict
-from typing import List
+from typing import List, Dict, Callable
 
 
+@dataclass
 class SemanticDomainObject:
     @classmethod
+    def get_field_parsing_exceptions(cls) -> Dict[str, Callable]:
+        return {}
+
+    @classmethod
     def from_dict(cls, kwargs):
+        for field, transform in cls.get_field_parsing_exceptions().items():
+            kwargs[field] = transform(kwargs[field])
         return cls(**kwargs)
     
     def to_dict(self, excluded_fields=None):
@@ -40,6 +47,7 @@ class Domain(SemanticDomainObject):
     questions: List[Question]
 
     @classmethod
-    def from_dict(cls, kwargs):
-        kwargs["questions"] = [Question.from_dict(q) for q in kwargs["questions"]]
-        return cls(**kwargs)
+    def get_field_parsing_exceptions(cls) -> Dict[str, Callable]:
+        return {
+            "questions": lambda questions: [Question.from_dict(q) for q in questions]
+        }
