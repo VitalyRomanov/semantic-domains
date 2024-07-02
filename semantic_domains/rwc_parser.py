@@ -1,11 +1,14 @@
 import json
 from pathlib import Path
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple, TypeVar, Union
 from importlib.metadata import version
 
 from docx import Document
 
 from semantic_domains.definitions import Domain, Question
+
+
+DomainType = TypeVar("DomainType", bound=Domain)
 
 
 def read_docx(path: Union[str, Path]):
@@ -149,14 +152,20 @@ class RWCParser:
                 word = word.replace(v, k)
             return word
         
+        def remove_double_spaces(word: str):
+            while "  " in word:
+                word = word.replace("  ", " ")
+            return word
+        
         def tokenize_words(words_text, replacement_map):
             words_text = protect_brackets(words_text, replacement_map)
-            words = words_text.split(",")  # TODO INTJ can be split using exclamation mark
+            words = words_text.split(",")  # TODO some words are slit using other punctuation characters
             words = [word.strip() for word in words]
             words = [word for word in words if word!= ""]  # remove empty words
             words = [word.replace("(v)", "(verb)") for word in words]  # replace (v) with (verb)
             words = [word.replace("(n)", "(noun)") for word in words]  # replace (n) with (noun)
             words = [recover_replaced_characters(word, replacement_map) for word in words]        
+            words = [remove_double_spaces(word) for word in words]  # remove double spaces
             return words
 
         final_words = tokenize_words(words_text=words_text, replacement_map=char_protection_replacement)
@@ -232,7 +241,7 @@ def parse_rwc_domains(domains_path: Union[str, Path]) -> List[Domain]:
     return parser.parse()
 
 
-def dump_domains_to_json(domains: List[Domain], output_json_path: Union[str, Path]) -> None:
+def dump_domains_to_json(domains: List[DomainType], output_json_path: Union[str, Path]) -> None:
     with open(output_json_path, "w") as f:
         f.write(json.dumps(
             {

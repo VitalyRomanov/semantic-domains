@@ -1,9 +1,10 @@
 from copy import copy
 import json
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Type, Union
+from typing import Dict, Generator, List, Optional, Type, Union
 
 from semantic_domains.definitions import Domain, Question
+from semantic_domains.rwc_parser import DomainType
 
 
 class DomainNode:
@@ -41,15 +42,21 @@ class DomainNode:
         path = "  /  ".join(str(part) for part in parts)
         return f"{self.__class__.__name__}({path if self.content else None})"
     
-    def __iter__(self) -> Iterable["DomainNode"]:
-        return self.traverse(return_domain=False)  # type: ignore
+    def __iter__(self):
+        for node in self.traverse(max_depth=10):
+            if node.content is not None:
+                yield node.content
+        return map(
+            lambda domain_node: domain_node.content, 
+            (node for node in self.traverse(max_depth=10) if node.content is not None)
+        )
     
-    def iterate_domains(self) -> Iterable[Domain]:
-        return self.traverse(return_domain=True)  # type: ignore
+    def iterate_domains(self):
+        return self.traverse(max_depth=10)  # 10 is greater than maximum depth
     
-    def traverse(self, max_depth: int = 5, return_domain: bool = False):
+    def traverse(self, max_depth: int = 5) -> Generator["DomainNode", None, None]:
         for node in self.subdomains.values(): 
-            yield node.content if return_domain else node
+            yield node
             if max_depth > 0:
                 yield from node.traverse(max_depth=max_depth - 1)
 
@@ -93,10 +100,11 @@ class DomainNode:
             return content
         else:
             descend = key.pop(0)
-            return self.subdomains[descend][key]
+            content = self.subdomains[descend][key]
+            return content
         
 
-def assemble_hierarchy(domains: List[Domain]) -> DomainNode:
+def assemble_hierarchy(domains: List[DomainType]) -> DomainNode:
     root = DomainNode()
     
     for domain in domains:
@@ -105,7 +113,7 @@ def assemble_hierarchy(domains: List[Domain]) -> DomainNode:
     return root
 
 
-def read_domains_from_json(json_path: Union[str, Path], as_hierarchy: bool = False, alternative_domain_class: Optional[Type[Domain]] = None) -> Union[List[Domain], DomainNode]:
+def read_domains_from_json(json_path: Union[str, Path], alternative_domain_class: Optional[Type[DomainType]] = None) -> List[DomainType]:
     with open(json_path, "r") as f:
         data = json.load(f)
 
@@ -115,6 +123,10 @@ def read_domains_from_json(json_path: Union[str, Path], as_hierarchy: bool = Fal
         domain_class = alternative_domain_class
 
     domains = [domain_class.from_dict(domain) for domain in data["domains"]]
-    if as_hierarchy:
-        return assemble_hierarchy(domains)
-    return domains
+    return domains  # type: ignore[return-value]
+
+
+def read_domain_hierarchy(json_path: Union[str, Path], as_hierarchy: bool = False, alternative_domain_class: Optional[Type[DomainType]] = None) -> DomainNode:
+    domains = read_domains_from_json(json_path, alternative_domain_class=alternative_domain_class)
+    return assemble_hierarchy(domains)
+    

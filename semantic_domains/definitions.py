@@ -11,7 +11,8 @@ class SemanticDomainObject:
     @classmethod
     def from_dict(cls, kwargs):
         for field, transform in cls.get_field_parsing_exceptions().items():
-            kwargs[field] = transform(kwargs[field])
+            if field in kwargs:
+                kwargs[field] = transform(kwargs[field])
         return cls(**kwargs)
     
     def to_dict(self, excluded_fields=None):
