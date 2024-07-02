@@ -6,3 +6,5 @@ data
 *.egg-info
 .DS_Store
 build/*
+deprecated/*
+.lprof
